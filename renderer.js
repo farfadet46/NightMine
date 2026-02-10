@@ -322,11 +322,11 @@ class Renderer {
         // On remonte de pHeight pour dessiner le haut
         
         // Head (Tête)
-        this.ctx.fillStyle = '#bbb';
+        this.ctx.fillStyle = '#a9ab2b';
         this.ctx.fillRect(-pSize / 2, -pHeight, pSize, 12);
         
         // Body (Corps)
-        this.ctx.fillStyle = '#6a4';
+        this.ctx.fillStyle = '#15288a';
         this.ctx.fillRect(-pSize / 2, -pHeight + 12, pSize, 12);
 
         // Item en main
