@@ -123,7 +123,7 @@ class Renderer {
 
     drawFurnace(screenX, screenY, worldX, worldY) {
         // Base du four
-        this.ctx.fillStyle = '#3';
+        this.ctx.fillStyle = '#383736';
         this.ctx.fillRect(screenX, screenY, CONSTANTS.BLOCK_SIZE, CONSTANTS.BLOCK_SIZE);
         
         // Détail du haut
