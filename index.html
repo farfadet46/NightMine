@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mining2D</title>
+    <title>NightMine v0.20</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #000; overflow: hidden; font-family: 'Arial', sans-serif; user-select: none; -webkit-user-select: none; -moz-user-select: none; touch-action: none; }
@@ -42,6 +42,75 @@
         .icon-furnace::before { content: ""; position: absolute; top: 4px; left: 4px; width: 24px; height: 8px; background: #2a2a2a; }
         .icon-furnace::after { content: ""; position: absolute; top: 16px; left: 8px; width: 16px; height: 10px; background: #1a1a1a; }
         
+        .icon-chest { 
+            background: #8b5a3c; 
+            position: relative; 
+            border: 2px solid #4d3319;
+            box-sizing: border-box;
+        }
+        .icon-chest::before { 
+            content: ""; 
+            position: absolute; 
+            top: 2px; 
+            left: 2px; 
+            width: 28px; 
+            height: 8px; 
+            background: #6d4c37;
+            border-bottom: 1px solid #4d3319;
+        }
+        .icon-chest::after { 
+            content: ""; 
+            position: absolute; 
+            top: 14px; 
+            left: 50%; 
+            transform: translateX(-50%);
+            width: 10px; 
+            height: 6px; 
+            background: #d4af37; 
+            border: 1px solid #8b7355;
+            border-radius: 1px;
+        }
+        
+        .icon-iron-ingot { background: linear-gradient(135deg, #8a9ba8 0%, #b0bec5 40%, #d0d8dc 50%, #b0bec5 60%, #8a9ba8 100%); position: relative; }
+        .icon-iron-ingot::before { content: ""; position: absolute; top: 10px; left: 6px; width: 20px; height: 12px; background: linear-gradient(135deg, #6d7a86 0%, #90a4ae 50%, #b0bec5 100%); border: 1px solid #546e7a; border-radius: 2px; }
+        .icon-iron-ingot::after { content: ""; position: absolute; top: 13px; left: 9px; width: 14px; height: 3px; background: rgba(255,255,255,0.3); border-radius: 1px; }
+        
+        .icon-gold-ingot { background: linear-gradient(135deg, #d4a843 0%, #ffd700 40%, #fff4b3 50%, #ffd700 60%, #d4a843 100%); position: relative; }
+        .icon-gold-ingot::before { content: ""; position: absolute; top: 10px; left: 6px; width: 20px; height: 12px; background: linear-gradient(135deg, #b8941f 0%, #ffd700 50%, #ffed4e 100%); border: 1px solid #b8941f; border-radius: 2px; }
+        .icon-gold-ingot::after { content: ""; position: absolute; top: 13px; left: 9px; width: 14px; height: 3px; background: rgba(255,255,255,0.4); border-radius: 1px; }
+        
+        .icon-pickaxe { position: relative; }
+        .icon-pickaxe::before { content: ""; position: absolute; width: 4px; height: 16px; background: #6d4c41; bottom: 4px; left: 14px; transform: rotate(-15deg); }
+        .icon-pickaxe::after { content: ""; position: absolute; width: 20px; height: 6px; background: #78909c; top: 6px; left: 6px; box-shadow: 0 1px 0 rgba(255,255,255,0.3), inset 0 -1px 0 rgba(0,0,0,0.3); }
+        
+        .icon-axe { position: relative; }
+        .icon-axe::before { content: ""; position: absolute; width: 4px; height: 18px; background: #6d4c41; bottom: 4px; left: 14px; transform: rotate(-20deg); }
+        .icon-axe::after { content: ""; position: absolute; width: 14px; height: 12px; background: linear-gradient(135deg, #78909c 0%, #90a4ae 50%, #78909c 100%); top: 4px; left: 10px; border-radius: 0 4px 0 0; box-shadow: 0 1px 0 rgba(255,255,255,0.3); }
+        
+        .icon-shovel { position: relative; }
+        .icon-shovel::before { content: ""; position: absolute; width: 4px; height: 18px; background: #6d4c41; bottom: 6px; left: 14px; }
+        .icon-shovel::after { content: ""; position: absolute; width: 10px; height: 10px; background: #78909c; bottom: 4px; left: 11px; border-radius: 0 0 4px 4px; box-shadow: 0 1px 0 rgba(255,255,255,0.3), inset 0 -1px 0 rgba(0,0,0,0.3); }
+        
+        .icon-sword { position: relative; }
+        .icon-sword::before { content: ""; position: absolute; width: 5px; height: 20px; background: linear-gradient(to bottom, #78909c 0%, #90a4ae 50%, #78909c 100%); top: 4px; left: 13px; box-shadow: 1px 0 0 rgba(255,255,255,0.3); }
+        .icon-sword::after { content: ""; position: absolute; width: 10px; height: 6px; background: #6d4c41; bottom: 4px; left: 11px; border: 1px solid #4a3729; }
+        
+        .icon-wood-pickaxe { position: relative; }
+        .icon-wood-pickaxe::before { content: ""; position: absolute; width: 4px; height: 16px; background: #6d4c41; bottom: 4px; left: 14px; transform: rotate(-15deg); }
+        .icon-wood-pickaxe::after { content: ""; position: absolute; width: 20px; height: 6px; background: #8b6f47; top: 6px; left: 6px; box-shadow: 0 1px 0 rgba(139,90,43,0.6), inset 0 -1px 0 rgba(0,0,0,0.3); }
+        
+        .icon-wood-axe { position: relative; }
+        .icon-wood-axe::before { content: ""; position: absolute; width: 4px; height: 18px; background: #6d4c41; bottom: 4px; left: 14px; transform: rotate(-20deg); }
+        .icon-wood-axe::after { content: ""; position: absolute; width: 14px; height: 12px; background: linear-gradient(135deg, #8b6f47 0%, #a0856b 50%, #8b6f47 100%); top: 4px; left: 10px; border-radius: 0 4px 0 0; box-shadow: 0 1px 0 rgba(139,90,43,0.6); }
+        
+        .icon-wood-shovel { position: relative; }
+        .icon-wood-shovel::before { content: ""; position: absolute; width: 4px; height: 18px; background: #6d4c41; bottom: 6px; left: 14px; }
+        .icon-wood-shovel::after { content: ""; position: absolute; width: 10px; height: 10px; background: #8b6f47; bottom: 4px; left: 11px; border-radius: 0 0 4px 4px; box-shadow: 0 1px 0 rgba(139,90,43,0.6), inset 0 -1px 0 rgba(0,0,0,0.3); }
+        
+        .icon-wood-sword { position: relative; }
+        .icon-wood-sword::before { content: ""; position: absolute; width: 5px; height: 20px; background: linear-gradient(to bottom, #8b6f47 0%, #a0856b 50%, #8b6f47 100%); top: 4px; left: 13px; box-shadow: 1px 0 0 rgba(139,90,43,0.6); }
+        .icon-wood-sword::after { content: ""; position: absolute; width: 10px; height: 6px; background: #6d4c41; bottom: 4px; left: 11px; border: 1px solid #4a3729; }
+        
         /* Crafting Panel */
         #craftingPanel { display: none; position: absolute; top: 50%; left: calc(50% + 200px); transform: translateY(-50%); background: rgba(40,40,40,0.95); border: 4px solid #222; padding: 20px; color: white; pointer-events: all; border-radius: 5px; min-width: 280px; z-index: 501; }
         #craftingGrid { display: grid; grid-template-columns: repeat(3, 60px); gap: 5px; margin: 15px 0; }
@@ -62,6 +131,10 @@
         .burn-bar { position: absolute; bottom: 0; left: 0; height: 4px; background: #f60; width: 0%; border-radius: 2px; box-shadow: 0 0 5px #f60; }
         .furnace-flame { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 20px; text-shadow: 0 0 10px #f60; }
         .furnace-fuel-label { color: #888; font-size: 12px; margin-top: 5px; text-align: center; }
+        
+        /* Chest Panel - même style que furnacePanel */
+        #chestPanel { display: none; position: absolute; top: 50%; left: calc(50% + 200px); transform: translateY(-50%); background: rgba(40,40,40,0.95); border: 4px solid #222; padding: 20px; color: white; pointer-events: all; border-radius: 5px; min-width: 300px; z-index: 501; }
+        #chestGrid { display: grid; grid-template-columns: repeat(9, 60px); gap: 5px; margin: 15px 0; }
     </style>
 </head>
 <body>
@@ -70,7 +143,7 @@
     <canvas id="gameCanvas"></canvas>
     <div id="dragSlot"></div>
     <div id="ui">
-        <div class="logo">MINING2D v0.14</div>
+        <div class="logo">NightMine v0.20</div>
         <div class="inventory-bar" id="inventoryBar"></div>
         
         <!-- Grille d'inventaire (partagée par craft et four) -->
@@ -115,13 +188,19 @@
             </div>
         </div>
         
+        <!-- Panel Coffre -->
+        <div id="chestPanel">
+            <h3 style="margin-bottom:10px; border-bottom:1px solid #555;">Coffre</h3>
+            <div id="chestGrid"></div>
+        </div>
+        
         <div id="tooltip"></div>
         
         <!-- Menu Pause -->
         <div id="pauseOverlay">
             <div class="pause-menu">
                 <h1>PAUSE</h1>
-                <span>Open Source mining game v0.14</span>
+                <span>Open Source mining game v0.17</span>
                 <div style="margin: 20px 0; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px;">
                     <p style="margin-bottom: 10px; color: #aaa; font-size: 14px;">CONFIGURATION DU MONDE</p>
                     
@@ -146,12 +225,19 @@
 <script src="chunkManager.js"></script>
 <script src="inventoryManager.js"></script>
 <script src="furnaceManager.js"></script>
+<script src="chestManager.js"></script>
 <script src="renderer.js"></script>
 <script src="inputManager.js"></script>
 <script src="player.js"></script>
 <script src="crafting.js"></script>
 <script src="ui.js"></script>
 <script src="world.js"></script>
+<script src="modManager.js"></script>
+
+<!-- MODS : Chargés avant game.js -->
+<script src="mods/example-mod.js"></script>
+<script src="mods/copper-mod.js"></script>
+<!-- Ajoutez vos mods ici -->
 
 <script src="game.js"></script>
 </body>

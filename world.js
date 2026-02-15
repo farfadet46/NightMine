@@ -110,4 +110,9 @@ class WorldManager {
         // Appeler le furnaceManager pour qu'il drop les items
         this.game.furnaceManager.breakFurnace(x, y);
     }
+
+    breakChest(x, y) {
+        // Appeler le chestManager pour qu'il drop les items
+        this.game.chestManager.breakChest(x, y);
+    }
 }

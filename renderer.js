@@ -44,6 +44,7 @@ class Renderer {
         this.clear();
         this.drawBackground(camera);
         this.drawWorld(camera, chunkManager);
+        this.drawMiningProgress(camera);
         this.drawDroppedItems(camera, this.game.droppedItems);
         this.drawLighting(camera, player, chunkManager);
         this.drawPlayer(player, camera, inventory);
@@ -113,6 +114,8 @@ class Renderer {
                     this.drawLadder(screenX, screenY);
                 } else if (id === 14) {
                     this.drawFurnace(screenX, screenY, x, y);
+                } else if (id === 18) {
+                    this.drawChest(screenX, screenY);
                 } else {
                     this.ctx.fillStyle = BLOCK_TYPES[id].color;
                     this.ctx.fillRect(screenX, screenY, CONSTANTS.BLOCK_SIZE, CONSTANTS.BLOCK_SIZE);
@@ -154,6 +157,37 @@ class Renderer {
         this.ctx.strokeStyle = '#555';
         this.ctx.lineWidth = 2;
         this.ctx.strokeRect(screenX, screenY, CONSTANTS.BLOCK_SIZE, CONSTANTS.BLOCK_SIZE);
+    }
+
+    drawChest(screenX, screenY) {
+        // Base du coffre (bois)
+        this.ctx.fillStyle = '#8b5a3c';
+        this.ctx.fillRect(screenX, screenY, CONSTANTS.BLOCK_SIZE, CONSTANTS.BLOCK_SIZE);
+        
+        // Détail du couvercle (bois plus foncé)
+        this.ctx.fillStyle = '#6d4c37';
+        this.ctx.fillRect(screenX, screenY, CONSTANTS.BLOCK_SIZE, 10);
+        
+        // Serrure (métal)
+        this.ctx.fillStyle = '#d4af37';
+        this.ctx.fillRect(screenX + 12, screenY + 14, 8, 10);
+        
+        // Détail de la serrure
+        this.ctx.fillStyle = '#333';
+        this.ctx.fillRect(screenX + 14, screenY + 18, 4, 3);
+        
+        // Bordures du coffre
+        this.ctx.strokeStyle = '#4d3319';
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeRect(screenX, screenY, CONSTANTS.BLOCK_SIZE, CONSTANTS.BLOCK_SIZE);
+        
+        // Lignes de détail du bois
+        this.ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+        this.ctx.lineWidth = 1;
+        this.ctx.beginPath();
+        this.ctx.moveTo(screenX, screenY + 10);
+        this.ctx.lineTo(screenX + CONSTANTS.BLOCK_SIZE, screenY + 10);
+        this.ctx.stroke();
     }
 
     drawLadder(screenX, screenY) {
@@ -370,11 +404,157 @@ class Renderer {
                 this.ctx.fillRect(2, 0, 11, 2);
                 this.ctx.fillRect(2, 6, 11, 2);
                 break;
+            case 19: // Pioche en fer
+                this.ctx.fillStyle = '#6d4c41';
+                this.ctx.fillRect(6, -2, 4, 18);
+                this.ctx.fillStyle = '#78909c';
+                this.ctx.fillRect(2, -8, 20, 6);
+                this.ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                this.ctx.fillRect(2, -8, 20, 2);
+                break;
+            case 20: // Hache en fer
+                this.ctx.fillStyle = '#6d4c41';
+                this.ctx.fillRect(6, -2, 4, 18);
+                this.ctx.fillStyle = '#78909c';
+                this.ctx.fillRect(8, -10, 12, 10);
+                this.ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                this.ctx.fillRect(8, -10, 12, 2);
+                break;
+            case 21: // Pelle en fer
+                this.ctx.fillStyle = '#6d4c41';
+                this.ctx.fillRect(6, -4, 4, 18);
+                this.ctx.fillStyle = '#78909c';
+                this.ctx.fillRect(4, 12, 8, 8);
+                this.ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                this.ctx.fillRect(4, 12, 8, 2);
+                break;
+            case 22: // Épée en fer
+                this.ctx.fillStyle = '#78909c';
+                this.ctx.fillRect(6, -12, 5, 22);
+                this.ctx.fillStyle = 'rgba(255,255,255,0.4)';
+                this.ctx.fillRect(7, -12, 2, 22);
+                this.ctx.fillStyle = '#6d4c41';
+                this.ctx.fillRect(4, 10, 9, 6);
+                this.ctx.strokeStyle = '#4a3729';
+                this.ctx.lineWidth = 1;
+                this.ctx.strokeRect(4, 10, 9, 6);
+                break;
+            case 23: // Pioche en bois
+                this.ctx.fillStyle = '#6d4c41';
+                this.ctx.fillRect(6, -2, 4, 18);
+                this.ctx.fillStyle = '#8b6f47';
+                this.ctx.fillRect(2, -8, 20, 6);
+                this.ctx.fillStyle = 'rgba(139,90,43,0.6)';
+                this.ctx.fillRect(2, -8, 20, 2);
+                break;
+            case 24: // Hache en bois
+                this.ctx.fillStyle = '#6d4c41';
+                this.ctx.fillRect(6, -2, 4, 18);
+                this.ctx.fillStyle = '#8b6f47';
+                this.ctx.fillRect(8, -10, 12, 10);
+                this.ctx.fillStyle = 'rgba(139,90,43,0.6)';
+                this.ctx.fillRect(8, -10, 12, 2);
+                break;
+            case 25: // Pelle en bois
+                this.ctx.fillStyle = '#6d4c41';
+                this.ctx.fillRect(6, -4, 4, 18);
+                this.ctx.fillStyle = '#8b6f47';
+                this.ctx.fillRect(4, 12, 8, 8);
+                this.ctx.fillStyle = 'rgba(139,90,43,0.6)';
+                this.ctx.fillRect(4, 12, 8, 2);
+                break;
+            case 26: // Épée en bois
+                this.ctx.fillStyle = '#8b6f47';
+                this.ctx.fillRect(6, -12, 5, 22);
+                this.ctx.fillStyle = 'rgba(139,90,43,0.6)';
+                this.ctx.fillRect(7, -12, 2, 22);
+                this.ctx.fillStyle = '#6d4c41';
+                this.ctx.fillRect(4, 10, 9, 6);
+                this.ctx.strokeStyle = '#4a3729';
+                this.ctx.lineWidth = 1;
+                this.ctx.strokeRect(4, 10, 9, 6);
+                break;
             default: // Bloc
                 this.ctx.fillStyle = BLOCK_TYPES[itemId].color;
                 this.ctx.fillRect(4, -4, 12, 12);
         }
         
         this.ctx.restore();
+    }
+
+    /**
+     * Dessine la progression de minage sur le bloc ciblé
+     */
+    drawMiningProgress(camera) {
+        if (!this.game.miningState.active) return;
+
+        const wx = this.game.miningState.x;
+        const wy = this.game.miningState.y;
+        const progress = this.game.miningState.progress;
+
+        const offsetX = camera.x * CONSTANTS.BLOCK_SIZE;
+        const offsetY = camera.y * CONSTANTS.BLOCK_SIZE;
+        
+        const screenX = Math.floor(wx * CONSTANTS.BLOCK_SIZE - offsetX);
+        const screenY = Math.floor(wy * CONSTANTS.BLOCK_SIZE - offsetY);
+
+        // Effet de fissures progressives
+        const crackLevel = Math.floor(progress * 10);
+        
+        this.ctx.save();
+        this.ctx.globalAlpha = 0.6;
+        
+        // Dessiner les fissures
+        this.ctx.strokeStyle = '#000';
+        this.ctx.lineWidth = 2;
+        this.ctx.beginPath();
+        
+        if (crackLevel >= 3) {
+            // Première fissure diagonale
+            this.ctx.moveTo(screenX, screenY);
+            this.ctx.lineTo(screenX + CONSTANTS.BLOCK_SIZE, screenY + CONSTANTS.BLOCK_SIZE);
+        }
+        
+        if (crackLevel >= 5) {
+            // Deuxième fissure
+            this.ctx.moveTo(screenX + CONSTANTS.BLOCK_SIZE, screenY);
+            this.ctx.lineTo(screenX, screenY + CONSTANTS.BLOCK_SIZE);
+        }
+        
+        if (crackLevel >= 7) {
+            // Fissures verticales et horizontales
+            this.ctx.moveTo(screenX + CONSTANTS.BLOCK_SIZE / 2, screenY);
+            this.ctx.lineTo(screenX + CONSTANTS.BLOCK_SIZE / 2, screenY + CONSTANTS.BLOCK_SIZE);
+            this.ctx.moveTo(screenX, screenY + CONSTANTS.BLOCK_SIZE / 2);
+            this.ctx.lineTo(screenX + CONSTANTS.BLOCK_SIZE, screenY + CONSTANTS.BLOCK_SIZE / 2);
+        }
+        
+        this.ctx.stroke();
+        
+        // Bordure de surbrillance
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, ' + (0.3 + Math.sin(Date.now() / 100) * 0.2) + ')';
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeRect(screenX + 1, screenY + 1, CONSTANTS.BLOCK_SIZE - 2, CONSTANTS.BLOCK_SIZE - 2);
+        
+        this.ctx.restore();
+
+        // Barre de progression en dessous du bloc
+        const barWidth = CONSTANTS.BLOCK_SIZE;
+        const barHeight = 4;
+        const barX = screenX;
+        const barY = screenY + CONSTANTS.BLOCK_SIZE + 4;
+
+        // Fond de la barre
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        this.ctx.fillRect(barX, barY, barWidth, barHeight);
+
+        // Progression
+        this.ctx.fillStyle = '#4caf50';
+        this.ctx.fillRect(barX, barY, barWidth * progress, barHeight);
+
+        // Bordure
+        this.ctx.strokeStyle = '#fff';
+        this.ctx.lineWidth = 1;
+        this.ctx.strokeRect(barX, barY, barWidth, barHeight);
     }
 }

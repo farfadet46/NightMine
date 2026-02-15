@@ -1,0 +1,10 @@
+{
+  "mods": [
+    "example-mod",
+    "copper-mod"
+  ],
+  "enabled": {
+    "example-mod": true,
+    "copper-mod": false
+  }
+}
