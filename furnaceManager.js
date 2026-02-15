@@ -57,6 +57,15 @@ class FurnaceManager {
         if (!this.isUIOpen) return;
         this.game.hideTooltip();
         
+        // Retourner l'item dragué à l'inventaire
+        if (this.game.inventory.draggedItem) {
+            this.game.inventory.addItem(
+                this.game.inventory.draggedItem.id, 
+                this.game.inventory.draggedItem.count
+            );
+            this.game.inventory.draggedItem = null;
+        }
+        
         this.isUIOpen = false;
         this.currentFurnacePos = null;
         this.game.paused = false;

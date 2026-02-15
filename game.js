@@ -6,12 +6,16 @@ class Game {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
         
+        // Initialiser le ModManager en premier
+        this.modManager = new ModManager();
+        
         // Sous-systèmes
         this.playerManager = new PlayerManager(this);
         this.inventory = new InventoryManager(CONSTANTS.INVENTORY_SIZE, CONSTANTS.HOTBAR_SIZE);
-        //this.chunkManager = new ChunkManager(CONSTANTS.WORLD_SEED);
-        this.chunkManager = new ChunkManager(Math.floor(Math.random() * 999999));
+        //this.chunkManager = new ChunkManager(CONSTANTS.WORLD_SEED, this.modManager);
+        this.chunkManager = new ChunkManager(Math.floor(Math.random() * 999999), this.modManager);
         this.furnaceManager = new FurnaceManager(this);
+        this.chestManager = new ChestManager(this);
         this.crafting = new CraftingSystem(this);
         this.world = new WorldManager(this);
         this.ui = new UIManager(this);
@@ -22,14 +26,25 @@ class Game {
         this.paused = false;
         this.inventoryOpen = false;
         this.camera = { x: 0, y: 0 };
-        this.miningCooldown = 0;
         this.lastTime = performance.now();
         this.dt = 1;
+
+        // Système de minage progressif
+        this.miningState = {
+            active: false,
+            x: null,
+            y: null,
+            progress: 0,
+            totalTime: 0,
+            startTime: 0
+        };
 
         // Items de départ
         this.inventory.addItem(1, 5);
         this.inventory.addItem(2, 16);
         this.inventory.addItem(11, 10);
+        this.inventory.addItem(9, 10); // 10 planches pour crafter des outils en bois
+        this.inventory.addItem(16, 3); // 3 lingots de fer pour tester
 
         this.init();
     }
@@ -40,8 +55,15 @@ class Game {
             self.renderer.resize();
         });
         this.renderer.resize();
+        
+        // Charger les mods AVANT de créer les chunks
+        this.modManager.loadAllMods();
+        this.modManager.listMods();
+        
         this.crafting.initUI();
+        this.chestManager.initUI();
         this.ui.update();
+        
         this.gameLoop();
     }
 
@@ -80,8 +102,21 @@ class Game {
             return;
         }
         
+        if (this.chestManager.isUIOpen) {
+            this.chestManager.closeChest();
+            this.hideTooltip();
+            return;
+        }
+        
         if (this.inventoryOpen) {
             this.crafting.returnItemsToInventory();
+            
+            // Retourner l'item dragué à l'inventaire
+            if (this.inventory.draggedItem) {
+                this.inventory.addItem(this.inventory.draggedItem.id, this.inventory.draggedItem.count);
+                this.inventory.draggedItem = null;
+            }
+            
             this.inventoryOpen = false;
             
             const grid = document.getElementById('inventoryGrid');
@@ -93,6 +128,7 @@ class Game {
             if (furnacePanel) furnacePanel.style.display = 'none';
             
             this.ui.hideTooltip();
+            this.ui.update(); // Mettre à jour l'UI pour refléter les changements
         } else {
             this.togglePause();
         }
@@ -109,41 +145,134 @@ class Game {
         
         this.world.update(this.dt);
         this.playerManager.update(this.dt, currentTime);
-        this.handleMining();
+        this.updateMining();
+        this.checkContinuousMining(); // Nouvelle vérification
         this.updateCamera();
     }
 
-    handleMining() {
-        if (this.miningCooldown > 0) {
-            this.miningCooldown -= this.dt;
+    updateMining() {
+        if (!this.miningState.active) return;
+
+        const now = performance.now();
+        const elapsed = now - this.miningState.startTime;
+        this.miningState.progress = Math.min(elapsed / this.miningState.totalTime, 1);
+
+        // Vérifier si le bloc est toujours là et à portée
+        const wx = this.miningState.x;
+        const wy = this.miningState.y;
+        const dx = wx + 0.5 - this.player.x;
+        const dy = wy + 0.5 - (this.player.y + 0.5);
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance > CONSTANTS.REACH_DISTANCE || this.chunkManager.getBlockId(wx, wy) === 0) {
+            this.cancelMining();
+            return;
         }
-        
-        if (this.input.mouse.down && this.miningCooldown <= 0) {
-            this.mineBlock();
-            this.miningCooldown = CONSTANTS.MINING_COOLDOWN;
+
+        // Minage complété
+        if (this.miningState.progress >= 1) {
+            this.completeBlockBreak(wx, wy);
         }
     }
 
-    mineBlock() {
-        const wx = Math.floor(this.camera.x + this.input.mouse.x / CONSTANTS.BLOCK_SIZE);
-        const wy = Math.floor(this.camera.y + this.input.mouse.y / CONSTANTS.BLOCK_SIZE);
-        
-        const dx = wx + 0.5 - this.player.x;
-        const dy = wy + 0.5 - (this.player.y + 0.5);
-        
-        if (Math.sqrt(dx * dx + dy * dy) > CONSTANTS.REACH_DISTANCE) return;
-
-        const id = this.chunkManager.getBlockId(wx, wy);
-        if (id && id !== 0 && !BLOCK_TYPES[id].unbreakable) {
-            if (id === 14) {
-                this.world.breakFurnace(wx, wy);
-            }
+    // Vérifie si on doit démarrer un nouveau minage avec le clic maintenu
+    checkContinuousMining() {
+        // Si pas de minage actif ET clic maintenu
+        if (!this.miningState.active && this.input.mouse.down) {
+            const wx = Math.floor(this.camera.x + this.input.mouse.x / CONSTANTS.BLOCK_SIZE);
+            const wy = Math.floor(this.camera.y + this.input.mouse.y / CONSTANTS.BLOCK_SIZE);
             
-            this.world.dropItem(wx + 0.5, wy + 0.5, id, 1);
-            this.chunkManager.setBlockId(wx, wy, 0);
-            this.checkAndBreakUnsupportedTorches(wx, wy);
-            this.ui.update();
+            const dx = wx + 0.5 - this.player.x;
+            const dy = wy + 0.5 - (this.player.y + 0.5);
+            
+            if (Math.sqrt(dx * dx + dy * dy) <= CONSTANTS.REACH_DISTANCE) {
+                const blockId = this.chunkManager.getBlockId(wx, wy);
+                if (blockId && blockId !== 0) {
+                    this.startMining(wx, wy);
+                }
+            }
         }
+    }
+
+    startMining(wx, wy) {
+        const id = this.chunkManager.getBlockId(wx, wy);
+        if (!id || id === 0 || BLOCK_TYPES[id].unbreakable) return;
+
+        // Vérifier si on peut miner ce bloc avec l'outil actuel
+        const miningData = this.canMineBlock(id);
+        if (!miningData.canMine) return;
+
+        this.miningState = {
+            active: true,
+            x: wx,
+            y: wy,
+            progress: 0,
+            totalTime: miningData.time,
+            startTime: performance.now()
+        };
+    }
+
+    cancelMining() {
+        this.miningState = {
+            active: false,
+            x: null,
+            y: null,
+            progress: 0,
+            totalTime: 0,
+            startTime: 0
+        };
+    }
+
+    canMineBlock(blockId) {
+        const block = BLOCK_TYPES[blockId];
+        if (!block || block.unbreakable) return { canMine: false, time: 0 };
+
+        const selectedItem = this.inventory.getSelectedItem();
+        let toolType = 'hand';
+        let efficiency = 0.2; // Main = très lent
+
+        if (selectedItem) {
+            const tool = BLOCK_TYPES[selectedItem.id];
+            if (tool && tool.tool) {
+                toolType = tool.toolType;
+                efficiency = tool.efficiency || 1;
+            }
+        }
+
+        // Vérifier si le bloc peut être miné avec cet outil
+        if (!block.minableWith) {
+            return { canMine: true, time: (block.hardness || 1) * 1000 / efficiency };
+        }
+
+        if (!block.minableWith.includes(toolType)) {
+            return { canMine: false, time: 0 };
+        }
+
+        // Calculer le temps de minage en millisecondes
+        const baseTime = (block.hardness || 1) * 1000;
+        const finalTime = baseTime / efficiency;
+
+        return { canMine: true, time: finalTime };
+    }
+
+    completeBlockBreak(wx, wy) {
+        const id = this.chunkManager.getBlockId(wx, wy);
+        
+        if (id === 14) {
+            this.world.breakFurnace(wx, wy);
+        }
+        
+        if (id === 18) {
+            this.world.breakChest(wx, wy);
+        }
+        
+        this.world.dropItem(wx + 0.5, wy + 0.5, id, 1);
+        this.chunkManager.setBlockId(wx, wy, 0);
+        this.checkAndBreakUnsupportedTorches(wx, wy);
+        this.ui.update();
+        this.cancelMining();
+        
+        // checkContinuousMining() dans update() s'occupera de redémarrer le minage
     }
 
     checkAndBreakUnsupportedTorches(wx, wy) {
@@ -186,6 +315,11 @@ class Game {
         
         if (existingBlock === 14) {
             this.furnaceManager.openFurnace(wx, wy);
+            return;
+        }
+        
+        if (existingBlock === 18) {
+            this.chestManager.openChest(wx, wy);
             return;
         }
         
@@ -251,6 +385,18 @@ class Game {
         if (id === 12) return '<div class="pixel-icon icon-sapling"></div>';
         if (id === 13) return '<div class="pixel-icon icon-ladder"></div>';
         if (id === 14) return '<div class="pixel-icon icon-furnace"></div>';
+        if (id === 15) return '<div class="block-icon" style="background:#2a2a2a"></div>'; // Charbon de bois
+        if (id === 16) return '<div class="pixel-icon icon-iron-ingot"></div>';
+        if (id === 17) return '<div class="pixel-icon icon-gold-ingot"></div>';
+        if (id === 18) return '<div class="pixel-icon icon-chest"></div>';
+        if (id === 19) return '<div class="pixel-icon icon-pickaxe"></div>';
+        if (id === 20) return '<div class="pixel-icon icon-axe"></div>';
+        if (id === 21) return '<div class="pixel-icon icon-shovel"></div>';
+        if (id === 22) return '<div class="pixel-icon icon-sword"></div>';
+        if (id === 23) return '<div class="pixel-icon icon-wood-pickaxe"></div>';
+        if (id === 24) return '<div class="pixel-icon icon-wood-axe"></div>';
+        if (id === 25) return '<div class="pixel-icon icon-wood-shovel"></div>';
+        if (id === 26) return '<div class="pixel-icon icon-wood-sword"></div>';
         return '<div class="block-icon" style="background:' + BLOCK_TYPES[id].color + '"></div>';
     }
 

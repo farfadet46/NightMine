@@ -2,11 +2,12 @@
  * Gestionnaire de chunks - gère la génération et le stockage des chunks
  */
 class ChunkManager {
-    constructor(seed = CONSTANTS.WORLD_SEED) {
+    constructor(seed = CONSTANTS.WORLD_SEED, modManager = null) {
         this.seed = seed;
         this.chunks = new Map();
         this.caveNoise = new SimpleNoise(seed + 1);
         this.detailNoise = new SimpleNoise(seed + 2);
+        this.modManager = modManager; // Référence au ModManager pour les minerais custom
     }
 
     /**
@@ -16,6 +17,7 @@ class ChunkManager {
         const chunk = this.createBaseTerrain(chunkX);
         this.addCaves(chunk, chunkX);  // NOUVEAU : Grottes
         this.addOreVeins(chunk, chunkX);
+        this.addCustomOres(chunk, chunkX); // NOUVEAU : Minerais des mods
         this.addTrees(chunk, chunkX);
         return chunk;
     }
@@ -126,6 +128,38 @@ class ChunkManager {
                 // Fer
                 if (this.hash2D(x, y, 8) < 0.015) {
                     this.placeOreVein(chunk, chunkX, x, y, 8, 2, 2);
+                }
+            }
+        }
+    }
+
+    /**
+     * Ajoute les minerais personnalisés des mods
+     */
+    addCustomOres(chunk, chunkX) {
+        if (!this.modManager || !this.modManager.customOres) return;
+
+        const baseX = chunkX * CONSTANTS.CHUNK_WIDTH;
+
+        for (let localX = 0; localX < CONSTANTS.CHUNK_WIDTH; localX++) {
+            const x = baseX + localX;
+
+            for (let y = 0; y < CONSTANTS.WORLD_HEIGHT; y++) {
+                if (chunk[localX][y] !== 2) continue; // Seulement dans la pierre
+
+                // Générer chaque minerai custom
+                for (let i = 0; i < this.modManager.customOres.length; i++) {
+                    const ore = this.modManager.customOres[i];
+                    
+                    // Vérifier la profondeur
+                    if (y < ore.minDepth || y > ore.maxDepth) continue;
+                    
+                    // Vérifier la rareté (utiliser l'ID comme seed pour la cohérence)
+                    if (this.hash2D(x, y, ore.id) < ore.rarity) {
+                        const veinWidth = ore.veinSize || 2;
+                        const veinHeight = ore.veinSize || 2;
+                        this.placeOreVein(chunk, chunkX, x, y, ore.id, veinWidth, veinHeight);
+                    }
                 }
             }
         }

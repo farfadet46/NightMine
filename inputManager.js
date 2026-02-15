@@ -43,6 +43,26 @@ class InputManager {
     handleMouseMove(e) {
         this.mouse.x = e.clientX;
         this.mouse.y = e.clientY;
+        
+        // Si on mine en maintenant le clic, vérifier si on change de bloc
+        if (this.mouse.down && !this.game.paused && !this.game.inventoryOpen) {
+            const wx = Math.floor(this.game.camera.x + this.mouse.x / CONSTANTS.BLOCK_SIZE);
+            const wy = Math.floor(this.game.camera.y + this.mouse.y / CONSTANTS.BLOCK_SIZE);
+            
+            // Si on vise un bloc différent, recommencer le minage
+            if (this.game.miningState.active && 
+                (wx !== this.game.miningState.x || wy !== this.game.miningState.y)) {
+                const dx = wx + 0.5 - this.game.player.x;
+                const dy = wy + 0.5 - (this.game.player.y + 0.5);
+                
+                if (Math.sqrt(dx * dx + dy * dy) <= CONSTANTS.REACH_DISTANCE) {
+                    this.game.startMining(wx, wy);
+                } else {
+                    this.game.cancelMining();
+                }
+            }
+        }
+        
         // Appeler ui.updateDragPosition au lieu de game.updateDragPosition
         if (this.game.ui) {
             this.game.ui.updateDragPosition(e.clientX, e.clientY);
@@ -52,12 +72,28 @@ class InputManager {
     handleMouseDown(e) {
         if (this.game.paused || this.game.inventoryOpen) return;
         
-        if (e.button === 0) this.mouse.down = true;
+        if (e.button === 0) {
+            this.mouse.down = true;
+            // Démarrer immédiatement le minage
+            const wx = Math.floor(this.game.camera.x + this.mouse.x / CONSTANTS.BLOCK_SIZE);
+            const wy = Math.floor(this.game.camera.y + this.mouse.y / CONSTANTS.BLOCK_SIZE);
+            
+            const dx = wx + 0.5 - this.game.player.x;
+            const dy = wy + 0.5 - (this.game.player.y + 0.5);
+            
+            if (Math.sqrt(dx * dx + dy * dy) <= CONSTANTS.REACH_DISTANCE) {
+                this.game.startMining(wx, wy);
+            }
+        }
         if (e.button === 2) this.game.placeBlock();
     }
 
     handleMouseUp(e) {
-        if (e.button === 0) this.mouse.down = false;
+        if (e.button === 0) {
+            this.mouse.down = false;
+            // Annuler le minage en cours
+            this.game.cancelMining();
+        }
     }
 
     handleWheel(e) {

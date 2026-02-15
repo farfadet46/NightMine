@@ -15,6 +15,15 @@ class CraftingSystem {
     toggle() {
         if (this.game.inventoryOpen && !this.game.furnaceManager.isUIOpen) {
             this.returnItemsToInventory();
+            
+            // Retourner l'item dragué à l'inventaire
+            if (this.game.inventory.draggedItem) {
+                this.game.inventory.addItem(
+                    this.game.inventory.draggedItem.id, 
+                    this.game.inventory.draggedItem.count
+                );
+                this.game.inventory.draggedItem = null;
+            }
         }
         
         this.game.inventoryOpen = !this.game.inventoryOpen;
@@ -30,6 +39,7 @@ class CraftingSystem {
         } else {
             grid.classList.remove('show');
             craftPanel.style.display = 'none';
+            this.game.ui.update(); // Mettre à jour l'UI
         }
     }
 
@@ -116,9 +126,20 @@ class CraftingSystem {
         
         for (let i = 0; i < RECIPES.length; i++) {
             const recipe = RECIPES[i];
-            if (recipe && recipe.pattern && this.patternsMatch(currentPattern, recipe.pattern)) {
-                matchedRecipe = recipe;
-                break;
+            
+            // Recette shapeless (sans forme)
+            if (recipe.shapeless) {
+                if (this.matchesShapeless(currentPattern, recipe.ingredients)) {
+                    matchedRecipe = recipe;
+                    break;
+                }
+            }
+            // Recette shaped (avec forme)
+            else if (recipe.pattern) {
+                if (this.matchesShaped(currentPattern, recipe.pattern)) {
+                    matchedRecipe = recipe;
+                    break;
+                }
             }
         }
 
@@ -132,6 +153,96 @@ class CraftingSystem {
             craftBtn.disabled = true;
             this.currentRecipe = null;
         }
+    }
+
+    /**
+     * Vérifie si le pattern correspond à une recette shapeless
+     */
+    matchesShapeless(currentPattern, ingredients) {
+        // Compter les items dans la grille
+        const gridItems = [];
+        for (let row = 0; row < 3; row++) {
+            for (let col = 0; col < 3; col++) {
+                if (currentPattern[row][col] !== null) {
+                    gridItems.push(currentPattern[row][col]);
+                }
+            }
+        }
+
+        // Vérifier si on a le bon nombre d'items
+        if (gridItems.length !== ingredients.length) return false;
+
+        // Compter chaque type d'item requis
+        const requiredCounts = {};
+        for (let i = 0; i < ingredients.length; i++) {
+            const id = ingredients[i];
+            requiredCounts[id] = (requiredCounts[id] || 0) + 1;
+        }
+
+        // Compter chaque type d'item présent
+        const gridCounts = {};
+        for (let i = 0; i < gridItems.length; i++) {
+            const id = gridItems[i];
+            gridCounts[id] = (gridCounts[id] || 0) + 1;
+        }
+
+        // Vérifier que les comptes correspondent
+        for (const id in requiredCounts) {
+            if (gridCounts[id] !== requiredCounts[id]) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Vérifie si le pattern correspond à une recette shaped (avec position flexible)
+     */
+    matchesShaped(currentPattern, recipePattern) {
+        // Essayer toutes les positions possibles (décalages)
+        for (let offsetRow = 0; offsetRow <= 3 - recipePattern.length; offsetRow++) {
+            for (let offsetCol = 0; offsetCol <= 3 - recipePattern[0].length; offsetCol++) {
+                if (this.matchesAtOffset(currentPattern, recipePattern, offsetRow, offsetCol)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Vérifie si le pattern correspond à un décalage spécifique
+     */
+    matchesAtOffset(currentPattern, recipePattern, offsetRow, offsetCol) {
+        // Vérifier que la zone du pattern correspond
+        for (let row = 0; row < recipePattern.length; row++) {
+            for (let col = 0; col < recipePattern[row].length; col++) {
+                const gridRow = offsetRow + row;
+                const gridCol = offsetCol + col;
+                
+                if (currentPattern[gridRow][gridCol] !== recipePattern[row][col]) {
+                    return false;
+                }
+            }
+        }
+
+        // Vérifier que le reste de la grille est vide
+        for (let row = 0; row < 3; row++) {
+            for (let col = 0; col < 3; col++) {
+                const isInRecipe = 
+                    row >= offsetRow && 
+                    row < offsetRow + recipePattern.length &&
+                    col >= offsetCol && 
+                    col < offsetCol + recipePattern[0].length;
+                
+                if (!isInRecipe && currentPattern[row][col] !== null) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     patternsMatch(current, recipe) {
