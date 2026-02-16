@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NightMine v0.21</title>
+    <title>NightMine v0.3</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #000; overflow: hidden; font-family: 'Arial', sans-serif; user-select: none; -webkit-user-select: none; -moz-user-select: none; touch-action: none; }
@@ -11,6 +11,25 @@
         canvas { display: block; background: #1a1a2e; image-rendering: pixelated; }
         #ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; color: white; }
         .logo { position: absolute; top: 20px; left: 20px; font-size: 14px; font-weight: bold; color: #6e6e6a; letter-spacing: 3px; }
+        
+        /* Notification de sauvegarde */
+        #saveNotification { 
+            position: absolute; 
+            top: 60px; 
+            left: 20px; 
+            background: rgba(68, 170, 68, 0.9); 
+            color: white; 
+            padding: 10px 20px; 
+            border-radius: 5px; 
+            font-size: 14px; 
+            font-weight: bold; 
+            opacity: 0; 
+            transition: opacity 0.3s; 
+            pointer-events: none;
+            z-index: 1500;
+        }
+        #saveNotification.show { opacity: 1; }
+        
         .inventory-bar { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; pointer-events: all; }
         .inv-slot { width: 60px; height: 60px; background: rgba(0,0,0,0.6); border: 2px solid #555; display: flex; align-items: center; justify-content: center; font-size: 30px; position: relative; border-radius: 5px; cursor: pointer; }
         .inv-slot.selected { border-color: #6a6; box-shadow: 0 0 10px #6a6; }
@@ -23,8 +42,38 @@
         #dragSlot { position: fixed; pointer-events: none; z-index: 2000; font-size: 40px; display: none; transform: translate(-50%, -50%); }
         #pauseOverlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 1000; pointer-events: all; }
         #pauseOverlay.show { display: flex; }
-        .pause-menu { background: #222; padding: 40px; border: 3px solid #555; border-radius: 15px; text-align: center; min-width: 300px; }
-        .pause-menu button { padding: 12px 30px; background: #4a4; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .pause-menu { background: #222; padding: 40px; border: 3px solid #555; border-radius: 15px; text-align: center; min-width: 350px; max-width: 450px; }
+        .pause-menu h1 { margin-bottom: 5px; }
+        .pause-menu button { padding: 12px 30px; background: #4a4; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin: 5px; }
+        .pause-menu button:hover { background: #5b5; }
+        .pause-menu button.danger { background: #a44; }
+        .pause-menu button.danger:hover { background: #b55; }
+        .pause-menu button.secondary { background: #666; }
+        .pause-menu button.secondary:hover { background: #777; }
+        
+        .save-section { 
+            margin: 20px 0; 
+            padding: 15px; 
+            background: rgba(255,255,255,0.05); 
+            border-radius: 8px; 
+        }
+        .save-section p { 
+            margin-bottom: 10px; 
+            color: #aaa; 
+            font-size: 12px; 
+        }
+        #saveInfo { 
+            color: #6a6; 
+            font-size: 11px; 
+            margin-bottom: 10px; 
+        }
+        .button-group { 
+            display: flex; 
+            gap: 10px; 
+            justify-content: center; 
+            flex-wrap: wrap;
+        }
+        #importFileInput { display: none; }
         .block-icon { width: 32px; height: 32px; border: 1px solid rgba(0,0,0,0.2); box-shadow: inset -2px -2px 0px rgba(0,0,0,0.3); }
         .stick { background: #6d4c41; box-shadow: 4px -4px 0 #6d4c41, 8px -8px 0 #6d4c41, -4px 4px 0 #6d4c41; transform: rotate(45deg); }
         .torch-inv { background: #6d4c41; box-shadow: 0 -4px 0 #6d4c41, 0 -8px 0 #6d4c41, 0 -12px 0 #333; top: 5px; }
@@ -118,7 +167,7 @@
     <canvas id="gameCanvas"></canvas>
     <div id="dragSlot"></div>
     <div id="ui">
-        <div class="logo">NightMine v0.21</div>
+        <div class="logo">NightMine v0.22</div>
         <div class="inventory-bar" id="inventoryBar"></div>
         
         <!-- Grille d'inventaire (partagée par craft et four) -->
@@ -175,21 +224,40 @@
         <div id="pauseOverlay">
             <div class="pause-menu">
                 <h1>PAUSE</h1>
-                <span>Open Source mining game v0.17</span>
-                <div style="margin: 20px 0; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px;">
-                    <p style="margin-bottom: 10px; color: #aaa; font-size: 14px;">CONFIGURATION DU MONDE</p>
+                <span style="color: #888; font-size: 12px;">NightMine v0.3</span>
+                
+                <!-- Section Sauvegarde -->
+                <div class="save-section">
+                    <p>💾 SAUVEGARDE</p>
+                    <div id="saveInfo">Chargement...</div>
+                    <div class="button-group">
+                        <button onclick="game.exportSave()" class="secondary">📥 Exporter</button>
+                        <button onclick="game.importSave()" class="secondary">📤 Importer</button>
+                        <button onclick="game.deleteSave()" class="danger" style="font-size: 12px; padding: 8px 15px;">🗑️ Supprimer</button>
+                    </div>
+                    <input type="file" id="importFileInput" accept=".json" onchange="if(this.files[0]) game.handleImportFile(this.files[0]); this.value='';">
+                </div>
+                
+                <!-- Section Monde -->
+                <div class="save-section">
+                    <p>🌍 CONFIGURATION DU MONDE</p>
                     
                     <input type="number" id="seedInput" placeholder="Entrez un seed..." 
                            style="padding: 10px; width: 100%; border-radius: 5px; border: 1px solid #444; background: #111; color: white; margin-bottom: 10px;">
                     
-                    <div style="display: flex; gap: 10px; justify-content: center;">
-                        <button onclick="game.regenerateWorld(document.getElementById('seedInput').value)" style="background: #44a;">APPLIQUER SEED</button>
-                        <button onclick="game.regenerateWorld(Math.floor(Math.random() * 999999))" style="background: #844;">ALEATOIRE</button>
+                    <div class="button-group">
+                        <button onclick="game.regenerateWorld(document.getElementById('seedInput').value)" style="background: #44a;">Appliquer Seed</button>
+                        <button onclick="game.regenerateWorld(Math.floor(Math.random() * 999999))" style="background: #844;">Aléatoire</button>
                     </div>
                 </div>
-                <button onclick="game.togglePause()" style="width: 100%;">REPRENDRE</button>
+                
+                <button onclick="game.newGame()" class="danger" style="width: 100%; margin-top: 10px;">🎮 Nouvelle Partie</button>
+                <button onclick="game.togglePause()" style="width: 100%; margin-top: 10px;">▶️ Reprendre</button>
             </div>
         </div>
+        
+        <!-- Notification de sauvegarde -->
+        <div id="saveNotification"></div>
     </div>
 </div>
 
@@ -208,6 +276,7 @@
 <script src="ui.js"></script>
 <script src="world.js"></script>
 <script src="modManager.js"></script>
+<script src="saveManager.js"></script>
 
 <!-- MODS : Chargés avant game.js -->
 <script src="mods/example-mod.js"></script>

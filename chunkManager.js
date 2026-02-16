@@ -14,12 +14,16 @@ class ChunkManager {
      * Génère un chunk à la position donnée
      */
     generate(chunkX) {
-        const chunk = this.createBaseTerrain(chunkX);
-        this.addCaves(chunk, chunkX);  // NOUVEAU : Grottes
-        this.addOreVeins(chunk, chunkX);
-        this.addCustomOres(chunk, chunkX); // NOUVEAU : Minerais des mods
-        this.addTrees(chunk, chunkX);
-        return chunk;
+        const blocks = this.createBaseTerrain(chunkX);
+        this.addCaves(blocks, chunkX);  // NOUVEAU : Grottes
+        this.addOreVeins(blocks, chunkX);
+        this.addCustomOres(blocks, chunkX); // NOUVEAU : Minerais des mods
+        this.addTrees(blocks, chunkX);
+        
+        return {
+            blocks: blocks,
+            modified: false
+        };
     }
 
     hash2D(x, y, seed = 1337) {
@@ -253,6 +257,13 @@ class ChunkManager {
         }
         return this.chunks.get(chunkX);
     }
+    
+    /**
+     * Récupère un chunk (alias pour compatibilité avec saveManager)
+     */
+    getChunk(chunkX, chunkY = 0) {
+        return this.get(chunkX);
+    }
 
     /**
      * Convertit les coordonnées monde en coordonnées chunk
@@ -270,7 +281,7 @@ class ChunkManager {
         if (worldY < 0 || worldY >= CONSTANTS.WORLD_HEIGHT) return 0;
         const { chunkX, localX } = this.worldToChunk(worldX);
         const chunk = this.get(chunkX);
-        return chunk[localX]?.[worldY] || 0;
+        return chunk.blocks[localX]?.[worldY] || 0;
     }
 
     /**
@@ -280,8 +291,9 @@ class ChunkManager {
         if (worldY < 0 || worldY >= CONSTANTS.WORLD_HEIGHT) return;
         const { chunkX, localX } = this.worldToChunk(worldX);
         const chunk = this.get(chunkX);
-        if (chunk[localX]) {
-            chunk[localX][worldY] = blockId;
+        if (chunk.blocks[localX]) {
+            chunk.blocks[localX][worldY] = blockId;
+            chunk.modified = true; // Marquer le chunk comme modifié
         }
     }
 }

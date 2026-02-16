@@ -34,7 +34,7 @@ class WorldManager {
             const chunk = self.game.chunkManager.get(chunkInfo.chunkX);
 
             self.game.chunkManager.setBlockId(s.x, s.y, 0);
-            self.game.chunkManager.generateTree(chunk, chunkInfo.localX, s.y + 1, s.x);
+            self.game.chunkManager.generateTree(chunk.blocks, chunkInfo.localX, s.y + 1, s.x);
 
             return false;
         });

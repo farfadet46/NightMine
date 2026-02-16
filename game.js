@@ -12,7 +12,6 @@ class Game {
         // Sous-systèmes
         this.playerManager = new PlayerManager(this);
         this.inventory = new InventoryManager(CONSTANTS.INVENTORY_SIZE, CONSTANTS.HOTBAR_SIZE);
-        //this.chunkManager = new ChunkManager(CONSTANTS.WORLD_SEED, this.modManager);
         this.chunkManager = new ChunkManager(Math.floor(Math.random() * 999999), this.modManager);
         this.furnaceManager = new FurnaceManager(this);
         this.chestManager = new ChestManager(this);
@@ -21,6 +20,7 @@ class Game {
         this.ui = new UIManager(this);
         this.renderer = new Renderer(this.canvas, this);
         this.input = new InputManager(this);
+        this.saveManager = new SaveManager(this); // NOUVEAU : Gestionnaire de sauvegarde
 
         // État
         this.paused = false;
@@ -39,12 +39,14 @@ class Game {
             startTime: 0
         };
 
-        // Items de départ
-        this.inventory.addItem(1, 5);
-        this.inventory.addItem(2, 16);
-        this.inventory.addItem(11, 10);
-        this.inventory.addItem(9, 10); // 10 planches pour crafter des outils en bois
-        this.inventory.addItem(16, 3); // 3 lingots de fer pour tester
+        // Items de départ (seulement si pas de sauvegarde)
+        if (!this.saveManager.hasSave()) {
+            this.inventory.addItem(1, 5);
+            this.inventory.addItem(2, 16);
+            this.inventory.addItem(11, 10);
+            this.inventory.addItem(9, 10); // 10 planches pour crafter des outils en bois
+            this.inventory.addItem(16, 3); // 3 lingots de fer pour tester
+        }
 
         this.init();
     }
@@ -59,6 +61,11 @@ class Game {
         // Charger les mods AVANT de créer les chunks
         this.modManager.loadAllMods();
         this.modManager.listMods();
+        
+        // Charger la sauvegarde si elle existe
+        if (this.saveManager.hasSave()) {
+            this.saveManager.loadSave();
+        }
         
         this.crafting.initUI();
         this.chestManager.initUI();
@@ -75,6 +82,10 @@ class Game {
     togglePause() {
         this.paused = !this.paused;
         document.getElementById('seedInput').value = this.chunkManager.seed;
+        
+        // Mettre à jour les infos de sauvegarde
+        this.updateSaveInfo();
+        
         document.getElementById('pauseOverlay').classList.toggle('show', this.paused);
     }
 
@@ -86,6 +97,20 @@ class Game {
         
         this.playerManager.reset();
         this.world.reset();
+        
+        // Réinitialiser l'inventaire
+        this.inventory = new InventoryManager(CONSTANTS.INVENTORY_SIZE, CONSTANTS.HOTBAR_SIZE);
+        
+        // Ajouter les items de départ
+        this.inventory.addItem(1, 5); //5 blocs de terre
+        this.inventory.addItem(2, 16); // 16 blocs de pierre
+        this.inventory.addItem(11, 10); // 10 torches
+        this.inventory.addItem(9, 10); // 10 planches pour crafter des outils en bois
+        this.inventory.addItem(16, 3); // 3 lingots de fer pour tester
+        
+        // Mettre à jour l'UI
+        this.ui.update();
+        this.crafting.updateUI();
         
         document.getElementById('seedInput').value = seed;
         this.togglePause();
@@ -376,6 +401,54 @@ class Game {
                 CONSTANTS.WORLD_HEIGHT - this.renderer.viewHeight
             )
         );
+    }
+
+    // Méthodes de sauvegarde
+    updateSaveInfo() {
+        const saveInfo = this.saveManager.getSaveInfo();
+        const saveInfoElement = document.getElementById('saveInfo');
+        
+        if (saveInfoElement) {
+            if (saveInfo) {
+                saveInfoElement.textContent = `Dernière sauvegarde: ${saveInfo.date}`;
+            } else {
+                saveInfoElement.textContent = 'Aucune sauvegarde';
+            }
+        }
+    }
+
+    exportSave() {
+        this.saveManager.exportSave();
+    }
+
+    importSave() {
+        const fileInput = document.getElementById('importFileInput');
+        fileInput.click();
+    }
+
+    handleImportFile(file) {
+        if (file) {
+            this.saveManager.importSave(file).then(() => {
+                // Fermer le menu pause après import
+                this.togglePause();
+            }).catch(error => {
+                console.error('Erreur import:', error);
+            });
+        }
+    }
+
+    deleteSave() {
+        if (confirm('Voulez-vous vraiment supprimer la sauvegarde ?')) {
+            this.saveManager.deleteSave();
+            this.updateSaveInfo();
+        }
+    }
+
+    newGame() {
+        if (confirm('Commencer une nouvelle partie ? (La sauvegarde actuelle sera supprimée)')) {
+            this.saveManager.deleteSave();
+            location.reload();
+        }
     }
 
     // Méthodes utilitaires exposées
