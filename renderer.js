@@ -44,6 +44,7 @@ class Renderer {
         this.clear();
         this.drawBackground(camera);
         this.drawWorld(camera, chunkManager);
+        this.drawMinableBlockOutline(camera);
         this.drawMiningProgress(camera);
         this.drawDroppedItems(camera, this.game.droppedItems);
         this.drawLighting(camera, player, chunkManager);
@@ -483,6 +484,51 @@ class Renderer {
     }
 
     /**
+     * Dessine un liseré gris discret sur le bloc survolé s'il peut être miné
+     * Ce liseré suit la souris et indique au joueur s'il a le bon outil
+     */
+/**
+     * Dessine le liseré sur le bloc survolé s'il est à portée et minable
+     */
+    drawMinableBlockOutline(camera) {
+        if (this.game.paused || this.game.inventoryOpen) return;
+        
+        // Calcul de la position du bloc sous la souris en coordonnées monde
+        const mouseWorldX = (this.game.input.mouse.x / CONSTANTS.BLOCK_SIZE) + camera.x;
+        const mouseWorldY = (this.game.input.mouse.y / CONSTANTS.BLOCK_SIZE) + camera.y;
+        
+        const wx = Math.floor(mouseWorldX);
+        const wy = Math.floor(mouseWorldY);
+        
+        // Calcul de la distance entre le centre du joueur et le centre du bloc
+        const dx = (wx + 0.5) - this.game.player.x;
+        const dy = (wy + 0.5) - (this.game.player.y + 0.5);
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        // Si trop loin, on ne dessine rien
+        if (distance > CONSTANTS.REACH_DISTANCE) return;
+        
+        // Vérifier si c'est un bloc réel (pas de l'air)
+        const blockId = this.game.chunkManager.getBlockId(wx, wy);
+        if (!blockId || blockId === 0) return;
+
+        // Vérifier si le bloc est minable avec l'item actuel (via ta fonction game.js)
+        const miningData = this.game.canMineBlock(blockId);
+        if (!miningData.canMine) return;
+
+        // --- DESSIN DU LISERÉ ---
+        const screenX = Math.floor((wx - camera.x) * CONSTANTS.BLOCK_SIZE);
+        const screenY = Math.floor((wy - camera.y) * CONSTANTS.BLOCK_SIZE);
+        
+        this.ctx.save();
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'; // Blanc semi-transparent
+        this.ctx.lineWidth = 2;
+        // On dessine un rectangle légèrement plus petit que le bloc pour l'effet "intérieur"
+        this.ctx.strokeRect(screenX + 1, screenY + 1, CONSTANTS.BLOCK_SIZE - 2, CONSTANTS.BLOCK_SIZE - 2);
+        this.ctx.restore();
+    }
+
+    /**
      * Dessine la progression de minage sur le bloc ciblé
      */
     drawMiningProgress(camera) {
@@ -531,10 +577,8 @@ class Renderer {
         
         this.ctx.stroke();
         
-        // Bordure de surbrillance
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, ' + (0.3 + Math.sin(Date.now() / 100) * 0.2) + ')';
-        this.ctx.lineWidth = 2;
-        this.ctx.strokeRect(screenX + 1, screenY + 1, CONSTANTS.BLOCK_SIZE - 2, CONSTANTS.BLOCK_SIZE - 2);
+        // Le liseré gris fixe est déjà affiché par drawMinableBlockOutline
+        // Pas besoin de bordure clignotante ici
         
         this.ctx.restore();
 

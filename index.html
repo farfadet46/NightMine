@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NightMine v0.20</title>
+    <title>NightMine v0.21</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #000; overflow: hidden; font-family: 'Arial', sans-serif; user-select: none; -webkit-user-select: none; -moz-user-select: none; touch-action: none; }
@@ -42,34 +42,9 @@
         .icon-furnace::before { content: ""; position: absolute; top: 4px; left: 4px; width: 24px; height: 8px; background: #2a2a2a; }
         .icon-furnace::after { content: ""; position: absolute; top: 16px; left: 8px; width: 16px; height: 10px; background: #1a1a1a; }
         
-        .icon-chest { 
-            background: #8b5a3c; 
-            position: relative; 
-            border: 2px solid #4d3319;
-            box-sizing: border-box;
-        }
-        .icon-chest::before { 
-            content: ""; 
-            position: absolute; 
-            top: 2px; 
-            left: 2px; 
-            width: 28px; 
-            height: 8px; 
-            background: #6d4c37;
-            border-bottom: 1px solid #4d3319;
-        }
-        .icon-chest::after { 
-            content: ""; 
-            position: absolute; 
-            top: 14px; 
-            left: 50%; 
-            transform: translateX(-50%);
-            width: 10px; 
-            height: 6px; 
-            background: #d4af37; 
-            border: 1px solid #8b7355;
-            border-radius: 1px;
-        }
+        .icon-chest { background: #8b5a3c; position: relative; border: 2px solid #4d3319; box-sizing: border-box; }
+        .icon-chest::before { content: ""; position: absolute; top: 2px; left: 2px; width: 28px; height: 8px; background: #6d4c37; border-bottom: 1px solid #4d3319; }
+        .icon-chest::after { content: ""; position: absolute; top: 14px; left: 50%; transform: translateX(-50%); width: 10px; height: 6px; background: #d4af37; border: 1px solid #8b7355; border-radius: 1px; }
         
         .icon-iron-ingot { background: linear-gradient(135deg, #8a9ba8 0%, #b0bec5 40%, #d0d8dc 50%, #b0bec5 60%, #8a9ba8 100%); position: relative; }
         .icon-iron-ingot::before { content: ""; position: absolute; top: 10px; left: 6px; width: 20px; height: 12px; background: linear-gradient(135deg, #6d7a86 0%, #90a4ae 50%, #b0bec5 100%); border: 1px solid #546e7a; border-radius: 2px; }
@@ -143,7 +118,7 @@
     <canvas id="gameCanvas"></canvas>
     <div id="dragSlot"></div>
     <div id="ui">
-        <div class="logo">NightMine v0.20</div>
+        <div class="logo">NightMine v0.21</div>
         <div class="inventory-bar" id="inventoryBar"></div>
         
         <!-- Grille d'inventaire (partagée par craft et four) -->
